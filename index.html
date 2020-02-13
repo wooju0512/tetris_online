@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>TETRIS</title>
+    <style>
+      #display{
+        border:10px solid black;
+        height:700px;
+        width:380px;
+        border-radius: 80px 80px 80px 80px;
+        background: linear-gradient(#05FBFF, #1D62F0 ) fixed;
+      }
+      #top-pad{
+        background-color: black;
+        width:100%;
+        height:100px;
+
+        border-radius: 68px 68px 0px 0px;
+      }
+
+      #top-deco1{
+        margin-top: 30px;
+        margin-left:-30px;
+        margin-right:30px;
+        background-color: white;
+        width:13px;
+        height:13px;
+        border-radius: 68px 68px 68px 68px;
+      }
+      #top-deco2{
+        margin-top: 30px;
+        background-color: white;
+        width:80px;
+        height:8px;
+        border-radius: 68px 68px 68px 68px;
+      }
+
+
+
+      #bottom-pad{
+        background-color: black;
+        width:100%;
+        height:90px;
+
+        border-radius: 0px 0px 68px 68px;
+      }
+      #bottom-deco1{
+        border:none;
+        background-color: white;
+        width:70px;
+        height:70px;
+        border-radius: 68px 68px 68px 68px;
+      }
+      #in_display{
+        margin-bottom:115px;
+      }
+      #title{
+        color:white;
+        font-size:55px;
+      }
+      #id , #pw{
+        width:300px;
+        border:none;
+        border-radius: 20px 20px 20px 20px;
+        text-align: center;
+        height:50px;
+        font-size: 22px;
+      }
+      #submit , #register{
+        width:130px;
+        border:none;
+        border-radius: 20px 20px 20px 20px;
+        text-align: center;
+        height:50px;
+        font-size: 22px;
+        margin:0;
+        padding:0;
+      }
+      #register{
+        margin-left:40px;
+      }
+    </style>
+  </head>
+  <body>
+    <center>
+    <div id="display">
+      <div id="top-pad">
+        <table id="top_table"><tr>
+          <td><div id="top-deco1"></div></td><td><div id="top-deco2"></div></td>
+      </tr></table>
+      </div>
+      <h1 id="title">Tetris</h1>
+      <table id="in_display">
+        <form>
+        <tr>
+        <td><input id="id" name="id" placeholder="아이디를 입력하세요."></input></td>
+        </tr>
+        <tr>
+        <td><input id="pw" name="pw" placeholder="비밀번호를 입력하세요."></input></td>
+        </tr>
+        <tr>
+        <td><br><br><br><br><button  id="submit" type="submit">Sign in</button></form><button id="register" onclick="location.href='./signup'">Sign up</button></td>
+        </tr>
+      </table>
+        <div id="bottom-pad">
+          <table id="bottom_table"><tr>
+          <td><p><button id="bottom-deco1"></button></p></td>
+        </tr></table>
+        </div>
+    </div>
+    </center>
+  </body>
+</html>

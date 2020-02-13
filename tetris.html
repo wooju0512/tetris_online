@@ -1,0 +1,603 @@
+<!doctype HTML>
+<html>
+
+<head>
+	<meta charset="utf-8">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+		<link href="https://fonts.googleapis.com/css?family=Press+Start+2P" rel="stylesheet"/>
+	<style>
+		#user2{
+				opacity: 0.8;
+			background-color: white;
+			border:2px solid black;
+		}
+		#display{
+			opacity: 0.8;
+			background-color: white;
+		}
+
+		* {
+		  font-family: 'Press Start 2P', cursive;
+		}
+
+		.grid {
+      margin:30px;
+		  display: grid;
+		  grid-template-columns: 320px 200px;
+		}
+		.grid-2{
+      margin-top:-630px;
+      margin-right:100px;
+			float:right;
+			display: grid;
+			grid-template-columns: 320px 200px;
+		}
+
+		.menu_column {
+		  display: flex;
+		  flex-direction: column;
+		  justify-content: space-between;
+		}
+    .user2{
+    	height:500
+      font-size:10px;
+      text-align:right;
+      margin-right:30px;
+    }
+		.display{
+		  border: solid 2px;
+		}
+
+		.play-button {
+		  background-color: #4caf50;
+		  font-size: 16px;
+		  padding: 15px 30px;
+		  cursor: pointer;
+		}
+		#score_list{
+			float:left;
+		}
+    *{
+      margin:0;
+      padding:0;
+    }
+		table{
+			border-spacing:30px;
+}
+#res{
+	display:none;
+	background-color: white;
+	color:red;
+}
+	</style>
+	<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+</head>
+
+
+<body>
+	<div id="res" style="z-index:1;">
+		<h1>Your Win</h1>
+	</div>
+  <button onclick="ready();">ready</button>
+<div class="grid" style="z-index:2;">
+<canvas id="display" class="display"></canvas>
+	<div class="menu_column">
+		<div>
+			<h1>TETRIS</h1>
+			<p>Name :<span id="nickname"></span></p>
+			<p>Score :<span id="score">0</span></p>
+			<p>Time :<span id="time">60</span></p>
+			<canvas id="save" width="280" height="150"></canvas>
+			<canvas id="next_block" class="next"></canvas>
+		</div>
+	</div>
+</div>
+<div class="grid-2" style="z-index:2;margin-right:200px;">
+	<div class="user2">
+		<div>
+			<p><span id="bot-nickname">USER2</span></p>
+		</div>
+	</div>
+	<canvas id="user2" width="150" height="300" class="user2_display"></canvas>
+</div>
+<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+<script>
+var socket = io();
+var name = 'USER';
+var cnt = 0;
+var now = false;
+var time = 60;
+socket.on('UserCnt', function(data){
+	play();
+});
+socket.on('acount',function(data){
+	cnt=(data-1)-cnt;
+	cnt++;
+	document.getElementById('nickname').innerHTML = name+cnt;
+});
+socket.on('Server',function(data){
+	alert(data);
+});
+function ready(){
+	socket.emit('vote',document.getElementById('nickname').innerHTML);
+}
+
+
+
+
+
+
+
+const BLOCK_SIZE = 1;
+
+
+const canvas = document.getElementById('display');
+const ctx = canvas.getContext('2d');
+
+const canvas2 = document.getElementById('user2');
+const ctx2 = canvas2.getContext('2d');
+
+const GAME_MODE = 1;
+const GAME_OVER = 2;
+
+var Mode=GAME_MODE;
+var playing = true;
+
+var change=1;
+
+ctx.canvas.width = 10 * 30;
+ctx.canvas.height = 20 * 30;
+
+ctx2.canvas.width = 10 * 15;
+ctx2.canvas.height = 20 * 15;
+
+
+
+var map=[
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0]
+];
+var score=0;
+
+var speed=250;
+var tetris_time=0;
+
+var block_num=Math.floor(Math.random()*6.9);
+var next_block_num = Math.floor(Math.random()*6.9);
+var block_x=4;
+var block_y=0;
+var block;
+var block_now;
+var change_block=199;
+
+
+
+function block_init(){
+	block= new Array();
+
+	tmp = new Array();
+	tmp.push(0,0);tmp.push(0,1);tmp.push(0,2);tmp.push(0,3);
+	block.push(tmp);
+
+	tmp = new Array();
+	tmp.push(0,0);tmp.push(0,1);tmp.push(0,2);tmp.push(1,1);
+	block.push(tmp);
+
+	tmp = new Array();
+	tmp.push(0,0);tmp.push(0,1);tmp.push(1,1);tmp.push(1,2);
+	block.push(tmp);
+
+	tmp = new Array();
+	tmp.push(0,1);tmp.push(0,2);tmp.push(1,0);tmp.push(1,1);
+	block.push(tmp);
+
+	tmp = new Array();
+	tmp.push(0,0);tmp.push(0,1);tmp.push(1,0);tmp.push(1,1);
+	block.push(tmp);
+
+	tmp = new Array();
+	tmp.push(0,0);tmp.push(0,1);tmp.push(0,2);tmp.push(1,0);
+	block.push(tmp);
+
+	tmp = new Array();
+	tmp.push(0,0);tmp.push(1,0);tmp.push(1,1);tmp.push(1,2);
+	block.push(tmp);
+}
+
+
+function map_reset(){
+	for(i=0;i<20;i++){
+		for(j=0;j<10;j++){
+			map[i][j]=0;
+		}
+	}
+}
+
+function play(){
+	if(playing==false)return;
+		score=0;
+		block_init();
+		map_reset();
+		reset();
+		Mode= GAME_MODE;
+
+		block_now = block[block_num].slice();
+		setInterval(Run, speed);
+		playing=false;
+}
+
+function reset(){
+	speed=250;
+	score=0;
+	map_reset();
+	block_x=4;
+	block_y=0;
+}
+
+var a=0;
+var line =0;
+var map2 =[
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0]
+];
+function Run(){
+	tem=[11,11,11,11,11,11,11,11,11,11];
+	tem_fin=[];
+	a++;
+	socket.on('USER2',function(data){
+		map2=data.map;
+	});
+	socket.on('USER1',function(data){
+		map2=data.map;
+	});
+	if(CheckBlock()){
+			Mode=GAME_OVER
+				}
+			socket.emit('map',{ 'map' : map , 'user' : document.getElementById('nickname').innerHTML});
+
+		socket.on('res',function(data){
+			if(Mode == GAME_MODE){
+				var con = document.getElementById("res");
+				if(con.style.display=='none'){
+					con.style.display = 'block';
+				}
+			}
+		});
+			if(Mode==GAME_MODE){
+			tetris_time += speed;
+			if(tetris_time%1000==0){
+				time--;
+			}
+			document.getElementById('time').innerHTML=time;
+			if(time<=0){
+				Mode=GAME_OVER;
+			}
+			if(block_y==0){
+		change=1;
+	}
+	block_y++;
+
+			if(CheckBlock()){
+				block_y--;
+
+				for(k=0;k<8;k+=2)
+				{
+						check_y = block_y + block_now[k];
+						check_x = block_x + block_now[k+1];
+						map[check_y][check_x]=1;
+				}
+				line = 0;
+				for(i=0;i<20;i++){
+					sum = 0;
+					for(j=0;j<10;j++){
+						if(map[i][j]!=0){
+							sum++;
+						}
+
+					}
+					if(sum>=10){
+						for(k=i;k>0;k--){
+							for(j=0;j<10;j++){
+								map[k][j]=map[k-1][j];
+							}
+						}
+						line++;
+					}
+				}
+				score_up(sum);
+				block_y=0;
+				block_x=4;
+				block_num=next_block_num;
+				next_block_num = Math.floor(Math.random()*6.9);
+				block_now = block[block_num].slice();
+			}
+			if(CheckBlock())
+			block_now = block_save.slice();
+	Draw();
+
+
+a++;
+}
+line=0;
+}
+
+
+
+function CheckBlock(){
+	for(k=0;k<8;k+=2){
+		check_y = block_y + block_now[k];
+		check_x = block_x + block_now[k+1];
+		if(check_y < 0 )continue;
+		if(check_x< 0 || check_x >=10 || check_y >= 20 || map[check_y][check_x] != 0)
+				return true;
+	}
+	return false;
+}
+
+
+function block_img(){
+	if(change_block==0){
+		document.getElementById('save').style.backgroundImage="url('http://unifox.kr/wooju/tetris/image/0.1.PNG')";
+	}
+	else if(change_block==1){
+		document.getElementById('save').style.backgroundImage="url('http://unifox.kr/wooju/tetris/image/1.1.PNG')";
+	}
+	else if(change_block==2){
+		document.getElementById('save').style.backgroundImage="url('http://unifox.kr/wooju/tetris/image/2.1.PNG')";
+	}
+	else if(change_block==3){
+		document.getElementById('save').style.backgroundImage="url('http://unifox.kr/wooju/tetris/image/3.1.PNG')";
+	}
+	else if(change_block==4){
+		document.getElementById('save').style.backgroundImage="url('http://unifox.kr/wooju/tetris/image/4.1.PNG')";
+	}
+	else if(change_block==5){
+		document.getElementById('save').style.backgroundImage="url('http://unifox.kr/wooju/tetris/image/5.1.PNG')";
+	}
+	else if(change_block==6){
+		document.getElementById('save').style.backgroundImage="url('http://unifox.kr/wooju/tetris/image/6.1.PNG')";
+	}
+
+	if(next_block_num==0){
+		document.getElementById('next_block').style.backgroundImage="url('http://unifox.kr/wooju/tetris/image/0.PNG')";
+	}
+	else if(next_block_num==1){
+		document.getElementById('next_block').style.backgroundImage="url('http://unifox.kr/wooju/tetris/image/1.PNG')";
+	}
+	else if(next_block_num==2){
+		document.getElementById('next_block').style.backgroundImage="url('http://unifox.kr/wooju/tetris/image/2.PNG')";
+	}
+	else if(next_block_num==3){
+		document.getElementById('next_block').style.backgroundImage="url('http://unifox.kr/wooju/tetris/image/3.PNG')";
+	}
+	else if(next_block_num==4){
+		document.getElementById('next_block').style.backgroundImage="url('http://unifox.kr/wooju/tetris/image/4.PNG')";
+	}
+	else if(next_block_num==5){
+		document.getElementById('next_block').style.backgroundImage="url('http://unifox.kr/wooju/tetris/image/5.PNG')";
+	}
+	else if(next_block_num==6){
+		document.getElementById('next_block').style.backgroundImage="url('http://unifox.kr/wooju/tetris/image/6.PNG')";
+	}
+}
+
+
+
+function Draw(){
+	block_img();
+	for(i=0;i<20;i++){
+			for(j=0;j<10;j++){
+				if(map[i][j]==0)
+						ctx.fillStyle="#000";
+				else if(map[i][j]==11)
+						ctx.fillStyle="gray";
+				else if(map[i][j]==30)
+						ctx.fillStyle="gray";
+				else
+						ctx.fillStyle="lightgreen";
+				if(map2[i][j]==0)
+						ctx2.fillStyle="#000";
+				else
+						ctx2.fillStyle="lightpink";
+
+				for(k=0;k<8;k+=2)
+				{
+						if(block_y+block_now[k]==i && block_x+block_now[k+1]==j){
+							block_color();
+						}
+				}
+				x=j*30;
+				y=i*30;
+				x2=j*15;
+				y2=i*15;
+				if(CheckBlock())
+				block_now = block_Save.slice();
+				ctx.fillRect(x,y,30,30);
+				ctx2.fillRect(x2,y2,15,15);
+
+			}
+	}
+}
+function block_color(){
+	if(block_num==0){
+		ctx.fillStyle="#ff6633";
+
+	}
+	if(block_num==1){
+		ctx.fillStyle="#ffcc00"
+	}
+	if(block_num==2){
+		ctx.fillStyle="#ffcc33"
+	}
+	if(block_num==3){
+		ctx.fillStyle="#00ffff"
+	}
+	if(block_num==4){
+		ctx.fillStyle="#ff0033"
+	}
+	if(block_num==5){
+		ctx.fillStyle="#cc0099"
+	}
+	if(block_num==6){
+		ctx.fillStyle="#33cc33"
+	}
+}
+
+
+function onKeyDown(event)
+{
+	if(Mode == GAME_MODE){
+	if(event.which==37)	// 왼쪽키
+	{
+		block_x--;
+		if(CheckBlock())block_x++;
+		else Draw();
+	}
+
+
+	if(event.which==39)	// 오른쪽키
+	{
+		block_x++;
+		if(CheckBlock())block_x--;
+		else Draw();
+	}
+
+
+	if(event.which==40)	// 아래쪽키,
+	{
+		block_y++;
+		if(CheckBlock())block_y--;
+		else Draw();
+	}
+
+	if(event.which==38)	// 위쪽키(회전)
+	{
+		TurnBlock();
+		if(CheckBlock())
+		block_now = block_now.slice();
+		Draw();
+	}
+
+
+	if(event.which==32)
+	{
+		Draw();
+		while(1){
+			block_y++;
+			if(CheckBlock()){
+						block_y--;
+				break;
+			}
+		}
+			Draw();
+	}
+
+
+	if(event.which==90){
+		TurnBlock();
+		TurnBlock();
+		TurnBlock();
+		if(CheckBlock())
+		block_now = block_now.slice();
+		Draw();
+	}
+
+
+	if(event.which==67){
+		if(change_block==199){
+			block_x=4;
+			block_y=1;
+		change_block = block_num;
+		block_num=next_block_num;
+		next_block_num=Math.floor(Math.random()*6.9);
+		block_now = block[block_num].slice();
+		}
+		else{
+			if(change==1){
+		block_x=4;
+		block_y=1;
+		sum = block_num;
+			block_num=change_block;
+			change_block=sum;
+			block_now=block[block_num].slice();
+			change=0;
+		}
+	}
+		Draw();
+	}
+
+}
+}
+
+
+
+function TurnBlock(){
+	if(block_num==4)
+	return;
+centerX=1;
+centerY=1;
+		block_save = block_now.slice();
+		for(i=0;i<block_now.length;i+=2){
+			y=block_now[i+1] - centerX;
+			x=-(block_now[i]-centerY);
+			block_now[i]=y+centerY;
+			block_now[i+1]=x+centerX;
+		}
+		if(CheckBlock())
+		block_now = block_save.slice();
+}
+
+
+
+function score_up(sum){
+	if(playing!=false) return;
+	if(sum==10){
+	score+=100;
+	line+=1;
+	}
+	document.getElementById('score').innerHTML=score;
+}
+
+$(document).keydown(function( event ){
+	onKeyDown(event);
+});
+
+</script>
+</body>
+</html>
