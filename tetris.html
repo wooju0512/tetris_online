@@ -6,6 +6,10 @@
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
 		<link href="https://fonts.googleapis.com/css?family=Press+Start+2P" rel="stylesheet"/>
 	<style>
+	#next_block{
+		width:200px;
+		height:150px;
+	}
 		#user2{
 				opacity: 0.8;
 			background-color: white;
@@ -69,16 +73,123 @@
 	background-color: white;
 	color:red;
 }
+#server{
+	position: absolute;
+	margin-left:32px;
+	width:301.5px;
+	height:120px;
+	margin-top:200px;
+	background-color: red;
+	text-align: center;
+	color:white;
+	font-size: 35px;
+	display:none;
+}
+#gameover{
+	margin-top:20px;
+}
+#server-msg{
+	display:none;
+	margin-left:600px;
+	margin-top:150px;
+	position:absolute;
+	width:300px;
+	height:300px;
+	background-color: white;
+	border:10px solid black;
+	border-radius: 5px 5px 5px 5px;
+	text-align: center;
+	color:white;
+}
+#server-msg-deco{
+	width:287px;
+	height:287px;
+	border:7px solid gray;
+	border-radius: 2px 2px 2px 2px;
+}
+#server-msg-display{
+	background-color: #282828;
+	height:100%;
+	width:100%;
+}
+#server-msg-display p{
+	text-align: center;
+	font-size: 20px;
+}
+#server-info{
+	border:1px solid gray;
+	border-radius: 2px 2px 2px 2px;
+	width:80%;
+	height:150px;
+	background-color: black;
+}
+#exit,#replay{
+	text-align: center;
+	width:60px;
+	border:2px solid lightgray;
+	border-radius: 3px 3px 3px 3px;
+	height:40px;
+		color:white;
+}
+#exit{
+	float:left;
+	margin-left:70px;
+	background-color: gray;
+}
+#replay{
+	float:right;
+	margin-right:70px;
+	background-color: lightgreen;
+}
+#ready,#mode{
+	width:100%;
+	height:50px;
+	margin-top:15px;
+}
+#ready{
+	background-color: red;
+}
+#mode{
+	background-color: orange;
+}
 	</style>
 	<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 </head>
 
 
 <body>
+	<div id="server" style="z-index:2;">
+			<p id="gameover">Game Over</p>
+	</div>
+	<center>
+	<div id="server-msg" style="z-index:3;">
+			<div id="server-msg-deco">
+				<div id="server-msg-display">
+					<br>
+					<p>GAME OVER</p>
+					<br>
+					<center>
+					<div id="server-info">
+						<table>
+							<tr>
+								<td>ME:</td><td id="my-score">0</td>
+							</tr>
+							<tr>
+								<td>USER2:</td><td id="user-score">0</td>
+							</tr>
+						</table>
+					</div>
+				</center>
+				<br>
+				<button id="exit">EXIT</button><button id="replay" onclick="replay();">RE</button>
+				</div>
+			</div>
+	</div>
+</center>
 	<div id="res" style="z-index:1;">
 		<h1>Your Win</h1>
 	</div>
-  <button onclick="ready();">ready</button>
+
 <div class="grid" style="z-index:2;">
 <canvas id="display" class="display"></canvas>
 	<div class="menu_column">
@@ -89,6 +200,8 @@
 			<p>Time :<span id="time">60</span></p>
 			<canvas id="save" width="280" height="150"></canvas>
 			<canvas id="next_block" class="next"></canvas>
+			<button id="ready"onclick="ready();">ready</button>
+			<button id="mode" onclick="mode();">Mode</button>
 		</div>
 	</div>
 </div>
@@ -114,9 +227,9 @@ socket.on('acount',function(data){
 	cnt=(data-1)-cnt;
 	cnt++;
 	document.getElementById('nickname').innerHTML = name+cnt;
-});
-socket.on('Server',function(data){
-	alert(data);
+	if(cnt==2){
+		document.getElementById('bot-nickname').innerHTML = "usr2";
+	}
 });
 function ready(){
 	socket.emit('vote',document.getElementById('nickname').innerHTML);
@@ -124,8 +237,27 @@ function ready(){
 
 
 
-
-
+var mode_cnt=0;
+function mode(){
+	if(playing==true){
+	mode_cnt++;
+	if(mode_cnt>=3){
+		mode_cnt=0;
+	}
+	if(mode_cnt==0){
+		block_mode=30;
+		alert('기본모드');
+	}
+	else if(mode_cnt==1){
+			block_mode=29.5;
+			alert('샤샤샥모드');
+		}
+	else if(mode_cnt==2){
+			block_mode=29;
+			alert('바둑판모드');
+		}
+	}
+}
 
 
 const BLOCK_SIZE = 1;
@@ -188,7 +320,7 @@ var block;
 var block_now;
 var change_block=199;
 
-
+var block_mode=29;
 
 function block_init(){
 	block= new Array();
@@ -229,6 +361,39 @@ function map_reset(){
 			map[i][j]=0;
 		}
 	}
+}
+var ready_replay=0;
+var ang=0;
+function replay(){
+	ang++;
+	if(ang!=0){
+		document.getElementById('replay').style.backgroundColor="orange";
+	}
+	socket.emit('replay',{'user':document.getElementById('nickname').innerHTML});
+		socket.on('replay_res',function(data){
+			ready_replay=data.res;
+			if(ready_replay==2){
+				var server = document.getElementById('server');
+				server.style.display="none";
+				var server_msg = document.getElementById('server-msg');
+				server_msg.style.display="none";
+				block_y=0;
+				block_x=4;
+				block_num=next_block_num;
+				next_block_num = Math.floor(Math.random()*6.9);
+				block_now = block[block_num].slice();
+				score=0;
+				time=60;
+				ready_replay=0;
+				block_init();
+				map_reset();
+				reset();
+				document.getElementById('score').innerHTML=score;
+				document.getElementById('replay').style.backgroundColor="lightgreen";
+				Mode= GAME_MODE;
+				block_now = block[block_num].slice();
+			}
+		});
 }
 
 function play(){
@@ -299,6 +464,26 @@ function Run(){
 				}
 			}
 		});
+		if(Mode==GAME_OVER){
+			var server = document.getElementById('server');
+			server.style.display="block";
+			socket.emit('score_info',{ 'score' : document.getElementById('score').innerHTML , 'user' : document.getElementById('nickname').innerHTML});
+
+			socket.on('score_final',function(data){
+				var myscore = document.getElementById('my-score');
+				var userscore = document.getElementById('user-score');
+				if(document.getElementById('nickname').innerHTML=='USER1'){
+					myscore.innerHTML=data.usr1;
+					userscore.innerHTML=data.usr2;
+				}
+				if(document.getElementById('nickname').innerHTML=='USER2'){
+					myscore.innerHTML=data.usr2;
+					userscore.innerHTML=data.usr1;
+				}
+			var server_msg = document.getElementById('server-msg');
+			server_msg.style.display="block";
+		});
+		}
 			if(Mode==GAME_MODE){
 			tetris_time += speed;
 			if(tetris_time%1000==0){
@@ -329,7 +514,6 @@ function Run(){
 						if(map[i][j]!=0){
 							sum++;
 						}
-
 					}
 					if(sum>=10){
 						for(k=i;k>0;k--){
@@ -337,10 +521,10 @@ function Run(){
 								map[k][j]=map[k-1][j];
 							}
 						}
-						line++;
+						score_up(sum);
 					}
 				}
-				score_up(sum);
+				sum=0;
 				block_y=0;
 				block_x=4;
 				block_num=next_block_num;
@@ -364,7 +548,7 @@ function CheckBlock(){
 		check_y = block_y + block_now[k];
 		check_x = block_x + block_now[k+1];
 		if(check_y < 0 )continue;
-		if(check_x< 0 || check_x >=10 || check_y >= 20 || map[check_y][check_x] != 0)
+		if(check_x< 0 || check_x >=10 || check_y >= 20 || map[check_y][check_x] == 1 || map[check_y][check_x]==11)
 				return true;
 	}
 	return false;
@@ -428,7 +612,7 @@ function Draw(){
 				else if(map[i][j]==11)
 						ctx.fillStyle="gray";
 				else if(map[i][j]==30)
-						ctx.fillStyle="gray";
+						ctx.fillStyle=block_color();
 				else
 						ctx.fillStyle="lightgreen";
 				if(map2[i][j]==0)
@@ -448,7 +632,8 @@ function Draw(){
 				y2=i*15;
 				if(CheckBlock())
 				block_now = block_Save.slice();
-				ctx.fillRect(x,y,30,30);
+				
+				ctx.fillRect(x,y,block_mode,block_mode);
 				ctx2.fillRect(x2,y2,15,15);
 
 			}
@@ -479,10 +664,12 @@ function block_color(){
 	}
 }
 
-
+var save_x=[];
+var save_y=[];
 function onKeyDown(event)
 {
 	if(Mode == GAME_MODE){
+
 	if(event.which==37)	// 왼쪽키
 	{
 		block_x--;
@@ -585,17 +772,51 @@ centerY=1;
 
 
 
-function score_up(sum){
+function score_up(a){
 	if(playing!=false) return;
-	if(sum==10){
+	if(a==10){
 	score+=100;
-	line+=1;
 	}
 	document.getElementById('score').innerHTML=score;
 }
 
+
+var save_block_y=0;
+var down_y=0;
+var tmp_cnt=0;
+var tmp_x=0;
+var tmp_y=0;
 $(document).keydown(function( event ){
 	onKeyDown(event);
+	if(tmp_cnt>0){
+		for(i=0;i<8;i+=2){
+			tmp_x=save_x[i];
+			tmp_y=save_y[i];
+			if(map[tmp_y][tmp_x]==30)
+			map[tmp_y][tmp_x]=0;
+		}
+	}
+	save_block_y=block_y;
+	while(1){
+		block_y++;
+		if(CheckBlock()){
+					block_y--;
+			break;
+		}
+	}
+	down_y=block_y;
+	block_y=save_block_y;
+
+	for(k=0;k<8;k+=2)
+	{
+			check_y = down_y + block_now[k];
+			check_x = block_x + block_now[k+1];
+			map[check_y][check_x]=30;
+			save_x[k]=check_x;
+			save_y[k]=check_y;
+	}
+	Draw();
+	tmp_cnt++;
 });
 
 </script>
